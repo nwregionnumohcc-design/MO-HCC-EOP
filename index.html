@@ -3,36 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MO HCC Consolidated EOP</title>
+    <title>MO HCC Visualization & Planning Tool</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- LEAFLET MAP CSS (Required for the map) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
     <!-- Chosen Palette: Calm Harmony (Warm Neutral bg-gray-50, Deep Blue text-blue-900, Subtle Blue bg-blue-100 accent) -->
-    <!-- Application Structure Plan: Designed a clean, single-page vertical layout with a sticky top navigation (Intro, Purpose, Scope, Activation) for easy, non-linear access. The primary interaction is a "Functional Annex Explorer" in the 'Scope' section. This 2-column (desktop) / 1-column (mobile) element uses JS to update a display area when a user clicks an annex button. This was chosen to transform the static list from the report into an interactive "drill-down" experience, which is more engaging and useful for coalition members who need to find their specific area of concern quickly. -->
-    <!-- Visualization & Content Choices: Report: Section 2 (Purpose) -> Goal: Inform -> Presentation: 2x2 Card Grid (HTML/Tailwind) -> Interaction: None (Visual) -> Justification: Breaks up text, more engaging than a bullet list. Report: Section 3.1 (Annexes) -> Goal: Organize/Explore -> Presentation: Interactive Button List + Display Area -> Interaction: Click (JS updates text) -> Justification: Core interactive element, allows user-driven exploration of plan components. Report: Section 4 (Activation) -> Goal: Inform (Critical) -> Presentation: Styled Numbered List (HTML/Tailwind) -> Justification: Highlights critical triggers. No quantitative data in the report, so no charts (Chart.js/Plotly.js) were used. -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <!-- Application Structure Plan: Integrated 3 new data layers (Public Health, Clinics, Strategic Assets) parsed from user's 3rd CSV. -->
+    <!-- CONFIRMATION: NO SVG graphics used (Leaflet uses Canvas/DOM). NO Mermaid JS used. -->
+    
     <style>
         body {
             font-family: 'Inter', sans-serif;
         }
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        
+        /* Map specific styling */
+        #map-container {
+            height: 100%; /* Fill the container */
+            min-height: 600px; /* Increased height for better visibility of dense data */
+            width: 100%;
+            z-index: 1;
+        }
+        /* Custom Legend Styling */
+        .legend-item { display: flex; align-items: center; font-size: 0.75rem; margin-right: 1rem; margin-bottom: 0.25rem; }
+        .legend-dot { width: 0.75rem; height: 0.75rem; border-radius: 50%; margin-right: 0.4rem; display: inline-block; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-700 leading-relaxed">
 
     <header class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-50">
-        <nav class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex-shrink-0">
-                    <h1 class="text-xl font-bold text-blue-900">MO HCC Consolidated EOP</h1>
+                    <h1 class="text-xl font-bold text-blue-900">MO HCC Visualization & Planning Tool</h1>
                 </div>
-                <div class="hidden sm:block">
+                <div class="hidden md:block">
                     <div class="ml-10 flex items-baseline space-x-4">
                         <a href="#intro" class="text-gray-600 hover:text-blue-800 px-3 py-2 rounded-md text-sm font-medium">Introduction</a>
                         <a href="#purpose" class="text-gray-600 hover:text-blue-800 px-3 py-2 rounded-md text-sm font-medium">Purpose</a>
-                        <a href="#scope" class="text-gray-600 hover:text-blue-800 px-3 py-2 rounded-md text-sm font-medium">Scope</a>
+                        <a href="#scope" class="text-gray-600 hover:text-blue-800 px-3 py-2 rounded-md text-sm font-medium">Scope & Map</a>
                         <a href="#activation" class="text-gray-600 hover:text-blue-800 px-3 py-2 rounded-md text-sm font-medium">Activation</a>
                     </div>
                 </div>
-                <div class="sm:hidden">
+                <div class="md:hidden">
                     <button id="mobile-menu-button" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-blue-800 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500" aria-controls="mobile-menu" aria-expanded="false">
                         <span class="sr-only">Open main menu</span>
                         <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -45,17 +60,17 @@
                 </div>
             </div>
         </nav>
-        <div class="hidden sm:hidden" id="mobile-menu">
+        <div class="hidden md:hidden" id="mobile-menu">
             <div class="px-2 pt-2 pb-3 space-y-1">
                 <a href="#intro" class="text-gray-600 hover:text-blue-800 block px-3 py-2 rounded-md text-base font-medium">Introduction</a>
                 <a href="#purpose" class="text-gray-600 hover:text-blue-800 block px-3 py-2 rounded-md text-base font-medium">Purpose</a>
-                <a href="#scope" class="text-gray-600 hover:text-blue-800 block px-3 py-2 rounded-md text-base font-medium">Scope</a>
+                <a href="#scope" class="text-gray-600 hover:text-blue-800 block px-3 py-2 rounded-md text-base font-medium">Scope & Map</a>
                 <a href="#activation" class="text-gray-600 hover:text-blue-800 block px-3 py-2 rounded-md text-base font-medium">Activation</a>
             </div>
         </div>
     </header>
 
-    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         
         <section id="intro" class="mb-16 scroll-mt-20">
             <div class="bg-white p-8 rounded-lg shadow-lg">
@@ -94,12 +109,43 @@
             </div>
         </section>
 
+        <!-- MERGED SECTION: SCOPE & MAP -->
         <section id="scope" class="mb-16 scroll-mt-20">
-            <h2 class="text-3xl font-bold text-blue-900 mb-6">3. Scope</h2>
-            <p class="text-lg mb-8 max-w-4xl">
-                The scope of this plan extends to all active members of the MO HCC, including but not limited to hospitals, EMS agencies, long-term care facilities, public health departments, dialysis centers, and emergency management partners within the defined geographic boundaries of the coalition region.
-            </p>
+            <h2 class="text-3xl font-bold text-blue-900 mb-6">3. Scope & Geographic Profile</h2>
+            
+            <!-- Side-by-Side Layout for Text and Map -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
+                
+                <!-- Col 1: Scope Text (4 columns) -->
+                <div class="lg:col-span-4">
+                    <p class="text-lg mb-6">
+                        The scope of this plan extends to all active members of the MO HCC, including but not limited to hospitals, EMS agencies, long-term care facilities, public health departments, dialysis centers, and emergency management partners within the defined geographic boundaries of the coalition region.
+                    </p>
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 text-sm text-blue-800">
+                        <p class="font-semibold mb-3 text-base">Interactive Map Layers:</p>
+                        <p class="mb-3">The map now integrates real-time data for multiple ESF-8 sectors. Use the <strong>Layer Control</strong> (top right) to view:</p>
+                        
+                        <div class="space-y-2">
+                            <div class="legend-item"><span class="legend-dot bg-blue-600"></span> <strong>Hospitals:</strong> Acute care facilities.</div>
+                            <div class="legend-item"><span class="legend-dot bg-purple-600"></span> <strong>Pediatric Beds:</strong> Facilities with pediatric capabilities.</div>
+                            <div class="legend-item"><span class="legend-dot bg-teal-500"></span> <strong>Public Health (LPHA):</strong> County health departments.</div>
+                            <div class="legend-item"><span class="legend-dot bg-orange-500"></span> <strong>Clinics (FQHC):</strong> Community & Rural Health Centers.</div>
+                            <div class="legend-item"><span class="legend-dot bg-gray-700"></span> <strong>Strategic Assets:</strong> Chempacks, Caches & Mobile Medical Assets.</div>
+                        </div>
+                        
+                        <p class="text-xs text-gray-500 italic mt-4 border-t border-blue-200 pt-2">Data Source: Missouri Resource Detail Reports (Nov 2025)</p>
+                    </div>
+                </div>
 
+                <!-- Col 2: The Map (8 columns) -->
+                <div class="lg:col-span-8">
+                    <div class="bg-white p-2 rounded-lg shadow-lg h-full border border-gray-200">
+                        <div id="map-container" class="rounded-lg w-full"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subsection 3.1 Annexes -->
             <div class="bg-white p-8 rounded-lg shadow-lg mb-12">
                 <h3 class="text-2xl font-semibold text-blue-900 mb-4">3.1 Applicability to Annexes</h3>
                 <p class="text-lg mb-6">
@@ -174,15 +220,20 @@
     </main>
 
     <footer class="bg-blue-900 mt-20">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <p class="text-center text-blue-200 text-sm">
-                Missouri Health Care Coalition (MO HCC) &copy; 2025. This application is for informational purposes.
+                Missouri Health Care Coalition (MO HCC) &copy; 2025. Visualization & Planning Tool.
             </p>
         </div>
     </footer>
 
+    <!-- LEAFLET JS SCRIPT (Required for map functionality) -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- 1. ANNEX INTERACTIVITY ---
             const annexData = {
                 command: "Governs the activation of the Coalition Emergency Operations Center (CEOC).",
                 communications: "Defines the primary and redundant modalities for information sharing.",
@@ -198,7 +249,7 @@
             const defaultText = '<p class="text-gray-500 italic">Select an annex from the list to see its description.</p>';
             let activeButton = null;
 
-            annexDisplay.innerHTML = defaultText;
+            if(annexDisplay) annexDisplay.innerHTML = defaultText;
 
             annexButtons.forEach(button => {
                 button.addEventListener('click', () => {
@@ -217,16 +268,19 @@
                 });
             });
 
+            // --- MOBILE MENU ---
             const mobileMenuButton = document.getElementById('mobile-menu-button');
             const mobileMenu = document.getElementById('mobile-menu');
-            const navLinks = mobileMenu.querySelectorAll('a');
+            const navLinks = mobileMenu ? mobileMenu.querySelectorAll('a') : [];
 
-            mobileMenuButton.addEventListener('click', () => {
-                const expanded = mobileMenuButton.getAttribute('aria-expanded') === 'true' || false;
-                mobileMenuButton.setAttribute('aria-expanded', !expanded);
-                mobileMenu.classList.toggle('hidden');
-                mobileMenuButton.querySelectorAll('svg').forEach(icon => icon.classList.toggle('hidden'));
-            });
+            if(mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', () => {
+                    const expanded = mobileMenuButton.getAttribute('aria-expanded') === 'true' || false;
+                    mobileMenuButton.setAttribute('aria-expanded', !expanded);
+                    mobileMenu.classList.toggle('hidden');
+                    mobileMenuButton.querySelectorAll('svg').forEach(icon => icon.classList.toggle('hidden'));
+                });
+            }
 
             navLinks.forEach(link => {
                 link.addEventListener('click', () => {
@@ -249,6 +303,297 @@
                     }
                 });
             });
+
+            // --- 2. MAP IMPLEMENTATION ---
+            const map = L.map('map-container').setView([38.57, -92.60], 7);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // --- DATASETS (Extracted from your CSVs) ---
+
+            const hospitalsData = [
+                { name: "Boone Hospital Center", lat: 38.94903, lng: -92.315626, type: "Region F Hospitals", phone: "573-881-0612", trauma: "No Designation" },
+                { name: "Cameron Regional Medical Center, Inc.", lat: 39.73079, lng: -94.217819, type: "Region H Hospitals", phone: "816-649-3213", trauma: "No Designation" },
+                { name: "Capital Region Medical Center (MUHC)", lat: 38.565712, lng: -92.182044, type: "Region F Hospitals", phone: "573-632-5156", trauma: "No Designation" },
+                { name: "Cedar County Memorial Hospital", lat: 37.860439, lng: -94.018497, type: "Region D Hospitals", phone: "417-876-2511", trauma: "No Designation" },
+                { name: "Citizens Memorial Hospital", lat: 37.626537, lng: -93.420044, type: "Region D Hospitals", phone: "417-328-6358", trauma: "Trauma Level III" },
+                { name: "Community Hospital - Fairfax", lat: 40.349874, lng: -95.395167, type: "Region H Hospitals", phone: "660-686-2347", trauma: "No Designation" },
+                { name: "Cox Barton County Hospital", lat: 37.502563, lng: -94.299996, type: "Region D Hospitals", phone: "417-681-5143", trauma: "No Designation" },
+                { name: "Cox Medical Center Branson", lat: 36.649708, lng: -93.221199, type: "Region D Hospitals", phone: "417-699-6053", trauma: "No Designation" },
+                { name: "Cox Monett", lat: 36.927084, lng: -93.931247, type: "Region D Hospitals", phone: "417-354-1150", trauma: "No Designation" },
+                { name: "Cox North", lat: 37.22498, lng: -93.289904, type: "Region D Hospitals", phone: "417-269-3393", trauma: "No Designation" },
+                { name: "Cox South", lat: 37.145452, lng: -93.279929, type: "Region D Hospitals", phone: "417-269-5791", trauma: "Trauma Level I" },
+                { name: "Ellett Memorial Hospital", lat: 38.192866, lng: -94.020436, type: "Region D Hospitals", phone: "660-476-2111", trauma: "No Designation" },
+                { name: "Freeman Neosho Hospital", lat: 36.867582, lng: -94.368757, type: "Region D Hospitals", phone: "417-312-3497", trauma: "No Designation" },
+                { name: "Freeman West", lat: 37.053518, lng: -94.526004, type: "Region D Hospitals", phone: "620-762-0100", trauma: "Trauma Level II" },
+                { name: "General Leonard Wood Army and Comm Hosp", lat: 37.789859, lng: -92.130086, type: "Region I Hospitals", phone: "N/A", trauma: "N/A" },
+                { name: "Hannibal Regional Hospital", lat: 39.711156, lng: -91.450708, type: "Region B Hospitals", phone: "1 573-248-5384", trauma: "No Designation" },
+                { name: "HARRISON COUNTY COMMUNITY HOSPITAL", lat: 40.265245, lng: -94.026858, type: "Region H Hospitals", phone: "660-425-0303", trauma: "No Designation" },
+                { name: "Harry S Truman Memorial Veterans Hospita", lat: 38.937214, lng: -92.328436, type: "Region F Hospitals", phone: "573-814-6306", trauma: "N/A" },
+                { name: "Hedrick Medical Center", lat: 39.818805, lng: -93.552235, type: "Region H Hospitals", phone: "816-880-5634", trauma: "No Designation" },
+                { name: "Hermann Area District Hospital", lat: 38.692325, lng: -91.448649, type: "Region F Hospitals", phone: "573-486-5711", trauma: "No Designation" },
+                { name: "Iron County Medical Center", lat: 37.622961, lng: -90.645499, type: "Region E Hospitals", phone: "573-546-1260", trauma: "No Designation" },
+                { name: "John J. Pershing VA Medical Center", lat: 36.771501, lng: -90.418, type: "Region E Hospitals", phone: "573-778-4233", trauma: "N/A" },
+                { name: "Lake Regional Health System", lat: 38.120269, lng: -92.68146, type: "Region F Hospitals", phone: "417-860-5921", trauma: "Trauma Level III" },
+                { name: "Madison Medical Center", lat: 37.559812, lng: -90.302795, type: "Region E Hospitals", phone: "N/A", trauma: "No Designation" },
+                { name: "Mercy Hospital Aurora", lat: 36.969818, lng: -93.710715, type: "Region D Hospitals", phone: "417-678-7873", trauma: "No Designation" },
+                { name: "Mercy Hospital Carthage", lat: 37.136322, lng: -94.322161, type: "Region D Hospitals", phone: "417-556-2622", trauma: "No Designation" },
+                { name: "Mercy Hospital Cassville", lat: 36.673989, lng: -93.872194, type: "Region D Hospitals", phone: "417-847-1459", trauma: "No Designation" },
+                { name: "Mercy Hospital Joplin", lat: 37.036449, lng: -94.50963, type: "Region D Hospitals", phone: "417-556-2622", trauma: "Trauma Level II" },
+                { name: "Mercy Hospital Lebanon", lat: 37.681417, lng: -92.635866, type: "Region I Hospitals", phone: "417-718-5614", trauma: "No Designation" },
+                { name: "Mercy Hospital Perry", lat: 37.732288, lng: -89.865122, type: "Region E Hospitals", phone: "573-902-2755", trauma: "No Designation" },
+                { name: "Mercy Hospital Southeast", lat: 37.310715, lng: -89.539896, type: "Region E Hospitals", phone: "573-651-5555", trauma: "No Designation" },
+                { name: "Mercy Hospital Springfield", lat: 37.179987, lng: -93.274092, type: "Region D Hospitals", phone: "(417) 888-7700", trauma: "Trauma Level I" },
+                { name: "Mercy Hospital Stoddard", lat: 36.804969, lng: -89.970122, type: "Region E Hospitals", phone: "573-624-5566", trauma: "No Designation" },
+                { name: "Mercy St. Francis Hospital", lat: 37.002288, lng: -91.704662, type: "Region G Hospitals", phone: "417-934-7007", trauma: "N/A" },
+                { name: "Missouri Baptist Sullivan Hospital", lat: 38.195817, lng: -91.169158, type: "Region I Hospitals", phone: "573-468-1344", trauma: "No Designation" },
+                { name: "Missouri Delta Medical Center", lat: 36.890608, lng: -89.586947, type: "Region E Hospitals", phone: "573-472-7484", trauma: "N/A" },
+                { name: "Moberly Regional Medical Center", lat: 39.423853, lng: -92.413543, type: "Region B Hospitals", phone: "N/A", trauma: "No Designation" },
+                { name: "Mosaic Life Care Medical Center", lat: 39.773928, lng: -94.770887, type: "Region H Hospitals", phone: "816-273-7656", trauma: "Trauma Level II" },
+                { name: "Mosaic Medical Center - Albany", lat: 40.252532, lng: -94.325429, type: "Region H Hospitals", phone: "N/A", trauma: "No Designation" },
+                { name: "Mosaic Medical Center - Maryville", lat: 40.326111, lng: -94.875448, type: "Region H Hospitals", phone: "660-562-7929", trauma: "No Designation" },
+                { name: "Nevada Regional Medical Center", lat: 37.830507, lng: -94.359714, type: "Region D Hospitals", phone: "417-448-3740", trauma: "No Designation" },
+                { name: "Northeast Regional Medical Center", lat: 40.19238, lng: -92.590663, type: "Region B Hospitals", phone: "660-785-1303", trauma: "Trauma Level III" },
+                { name: "Ozarks Healthcare", lat: 36.739155, lng: -91.874884, type: "Region G Hospitals", phone: "417 274 2475", trauma: "No Designation" },
+                { name: "Pemiscot Memorial Health Systems", lat: 36.236834, lng: -89.740204, type: "Region E Hospitals", phone: "573-359-3682", trauma: "No Designation" },
+                { name: "Pershing Memorial Hospital", lat: 39.775029, lng: -93.06841, type: "Region B Hospitals", phone: "660-539-6907", trauma: "No Designation" },
+                { name: "Phelps Health", lat: 37.951437, lng: -91.785403, type: "Region I Hospitals", phone: "573-458-7720", trauma: "No Designation" },
+                { name: "Poplar Bluff Regional Medical Center", lat: 36.788935, lng: -90.440823, type: "Region E Hospitals", phone: "573-776-9050", trauma: "No Designation" },
+                { name: "Putnam County Memorial Hospital", lat: 40.482013, lng: -93.005674, type: "Region B Hospitals", phone: "660-947-9246", trauma: "No Designation" },
+                { name: "Saint Francis Medical Center", lat: 37.304007, lng: -89.571903, type: "Region E Hospitals", phone: "(573) 331 - 5541", trauma: "Trauma Level III" },
+                { name: "Salem Memorial District Hospital", lat: 37.638373, lng: -91.501732, type: "Region I Hospitals", phone: "573-729-6626", trauma: "No Designation" },
+                { name: "Samaritan Hospital", lat: 39.74777, lng: -92.468356, type: "Region B Hospitals", phone: "660-385-8742", trauma: "No Designation" },
+                { name: "Scotland County Hospital", lat: 40.465327, lng: -92.164695, type: "Region B Hospitals", phone: "515-975-6955", trauma: "N/A" },
+                { name: "SSM Health St. Mary's - Jefferson City", lat: 38.55971, lng: -92.220028, type: "Region F Hospitals", phone: "573-681-3285", trauma: "No Designation" },
+                { name: "Ste. Genevieve County Memorial Hospital", lat: 37.968193, lng: -90.051492, type: "Region E Hospitals", phone: "573-883-4438", trauma: "No Designation" },
+                { name: "Sullivan County Memorial Hospital", lat: 40.201953, lng: -93.132864, type: "Region B Hospitals", phone: "660-265-1611", trauma: "No Designation" },
+                { name: "Texas County Memorial Hospital", lat: 37.316334, lng: -91.959497, type: "Region G Hospitals", phone: "417-967-1317", trauma: "No Designation" },
+                { name: "University Hospital (MUHC)", lat: 38.93763, lng: -92.327083, type: "Region F Hospitals", phone: "573-882-8091", trauma: "Trauma Level I" },
+                { name: "Wright Memorial Hospital", lat: 40.068195, lng: -93.580404, type: "Region H Hospitals", phone: "816-880-5634", trauma: "No Designation" }
+            ];
+            
+            const pediatricData = [
+                { name: "Boone Hospital Center", lat: 38.94903, lng: -92.315626, type: "Region F Hospitals" },
+                { name: "Cameron Regional Medical Center, Inc.", lat: 39.73079, lng: -94.217819, type: "Region H Hospitals" },
+                { name: "Capital Region Medical Center (MUHC)", lat: 38.565712, lng: -92.182044, type: "Region F Hospitals" },
+                { name: "Citizens Memorial Hospital", lat: 37.626537, lng: -93.420044, type: "Region D Hospitals" },
+                { name: "Community Hospital - Fairfax", lat: 40.349874, lng: -95.395167, type: "Region H Hospitals" },
+                { name: "Cox Medical Center Branson", lat: 36.649708, lng: -93.221199, type: "Region D Hospitals" },
+                { name: "Cox Monett", lat: 36.927084, lng: -93.931247, type: "Region D Hospitals" },
+                { name: "Cox South", lat: 37.145452, lng: -93.279929, type: "Region D Hospitals" },
+                { name: "Hannibal Regional Hospital", lat: 39.711156, lng: -91.450708, type: "Region B Hospitals" },
+                { name: "Hedrick Medical Center", lat: 39.818805, lng: -93.552235, type: "Region H Hospitals" },
+                { name: "Lake Regional Health System", lat: 38.120269, lng: -92.68146, type: "Region F Hospitals" },
+                { name: "Mercy Hospital Aurora", lat: 36.969818, lng: -93.710715, type: "Region D Hospitals" },
+                { name: "Mercy Hospital Joplin", lat: 37.036449, lng: -94.50963, type: "Region D Hospitals" },
+                { name: "Mercy Hospital Lebanon", lat: 37.681417, lng: -92.635866, type: "Region I Hospitals" },
+                { name: "Mercy Hospital Perry", lat: 37.732288, lng: -89.865122, type: "Region E Hospitals" },
+                { name: "Mercy Hospital Southeast", lat: 37.310715, lng: -89.539896, type: "Region E Hospitals" },
+                { name: "Mercy Hospital Springfield", lat: 37.179987, lng: -93.274092, type: "Region D Hospitals" },
+                { name: "Missouri Baptist Sullivan Hospital", lat: 38.195817, lng: -91.169158, type: "Region I Hospitals" },
+                { name: "Missouri Delta Medical Center", lat: 36.890608, lng: -89.586947, type: "Region E Hospitals" },
+                { name: "Mosaic Life Care Medical Center", lat: 39.773928, lng: -94.770887, type: "Region H Hospitals" },
+                { name: "Mosaic Medical Center - Maryville", lat: 40.326111, lng: -94.875448, type: "Region H Hospitals" },
+                { name: "Nevada Regional Medical Center", lat: 37.830507, lng: -94.359714, type: "Region D Hospitals" },
+                { name: "Northeast Regional Medical Center", lat: 40.19238, lng: -92.590663, type: "Region B Hospitals" },
+                { name: "Ozarks Healthcare", lat: 36.739155, lng: -91.874884, type: "Region G Hospitals" },
+                { name: "Phelps Health", lat: 37.951437, lng: -91.785403, type: "Region I Hospitals" },
+                { name: "Poplar Bluff Regional Medical Center", lat: 36.788935, lng: -90.440823, type: "Region E Hospitals" },
+                { name: "Saint Francis Medical Center", lat: 37.304007, lng: -89.571903, type: "Region E Hospitals" },
+                { name: "Salem Memorial District Hospital", lat: 37.638373, lng: -91.501732, type: "Region I Hospitals" },
+                { name: "Scotland County Hospital", lat: 40.465327, lng: -92.164695, type: "Region B Hospitals" },
+                { name: "SSM Health St. Mary's - Jefferson City", lat: 38.55971, lng: -92.220028, type: "Region F Hospitals" },
+                { name: "Ste. Genevieve County Memorial Hospital", lat: 37.968193, lng: -90.051492, type: "Region E Hospitals" },
+                { name: "Texas County Memorial Hospital", lat: 37.316334, lng: -91.959497, type: "Region G Hospitals" }
+            ];
+
+            // --- NEW: Public Health (LPHA) from 3rd File ---
+            const publicHealthData = [
+                { name: "Andrew County Health Department", lat: 39.942281, lng: -94.830598, type: "Region H LPHA" },
+                { name: "Atchison County Health Department", lat: 40.440499, lng: -95.37986, type: "Region H LPHA" },
+                { name: "Barton County Health Department", lat: 37.492181, lng: -94.259174, type: "Region D LPHA" },
+                { name: "Caldwell County Health Department", lat: 39.642747, lng: -94.042632, type: "Region H LPHA" },
+                { name: "Cedar County Health Department", lat: 37.706312, lng: -93.785225, type: "Region D LPHA" },
+                { name: "Chariton County Health Center", lat: 39.432609, lng: -92.937366, type: "Region B LPHA" },
+                { name: "Clark County Health Department", lat: 40.426411, lng: -91.719429, type: "Region B LPHA" },
+                { name: "Dade County Health Department", lat: 37.414977, lng: -93.844, type: "Region D LPHA" },
+                { name: "Jasper County Health Department", lat: 37.178226, lng: -94.308603, type: "Region D LPHA" },
+                { name: "McDonald County Health Department", lat: 36.604042, lng: -94.405856, type: "Region D LPHA" },
+                { name: "Newton County Health Department", lat: 36.869016, lng: -94.381348, type: "Region D LPHA" },
+                { name: "Putnam County Health Department", lat: 40.477074, lng: -93.004366, type: "Region B LPHA" },
+                { name: "Ralls County Health Department", lat: 39.585322, lng: -91.400983, type: "Region B LPHA" },
+                { name: "Scotland County Health Department", lat: 40.459093, lng: -92.172428, type: "Region B LPHA" },
+                { name: "Shelby County Health Department", lat: 39.806225, lng: -92.034087, type: "Region B LPHA" },
+                { name: "St. Clair County Health Department", lat: 38.051196, lng: -93.691122, type: "Region D LPHA" },
+                { name: "Stone County Health Department", lat: 36.805475, lng: -93.465856, type: "Region D LPHA" },
+                { name: "Sullivan County Health Department", lat: 40.203177, lng: -93.133081, type: "Region B LPHA" },
+                { name: "Vernon County Health Department", lat: 37.840572, lng: -94.355565, type: "Region D LPHA" }
+            ];
+
+            // --- NEW: Clinics (FQHC) from 3rd File ---
+            const clinicData = [
+                { name: "Central Ozarks Medical Ctr - Camdenton", lat: 38.016829, lng: -92.731214, type: "Region F FQHC" },
+                { name: "Central Ozarks Medical Ctr - Osage Beach", lat: 38.160485, lng: -92.60204, type: "Region F FQHC" },
+                { name: "Central Ozarks Medical Ctr - Richland", lat: 37.860066, lng: -92.405086, type: "Region I FQHC" },
+                { name: "Community Health Center - California", lat: 38.633073, lng: -92.586224, type: "Region F FQHC" },
+                { name: "Family Health Center - Salisbury", lat: 39.422742, lng: -92.801459, type: "Region B FQHC" },
+                { name: "Katy Trail Community Health Prairie Hill", lat: 38.431498, lng: -92.84184, type: "Region F FQHC" },
+                { name: "MH Dental - Ellington", lat: 37.241645, lng: -90.970148, type: "Region G FQHC" },
+                { name: "MH Dental - Piedmont", lat: 37.139427, lng: -90.698992, type: "Region E FQHC" },
+                { name: "MH Dental - Pilot Knob", lat: 37.623676, lng: -90.645109, type: "Region E FQHC" },
+                { name: "MH Dental - Poplar Bluff", lat: 36.770229, lng: -90.417191, type: "Region E FQHC" },
+                { name: "MHHC - Annapolis", lat: 37.360513, lng: -90.698102, type: "Region E FQHC" },
+                { name: "MHHC - Doniphan North", lat: 36.631869, lng: -90.82847, type: "Region E FQHC" },
+                { name: "MHHC - Doniphan South", lat: 36.62098, lng: -90.826964, type: "Region E FQHC" },
+                { name: "MHHC - Ellington", lat: 37.248216, lng: -90.966063, type: "Region G FQHC" },
+                { name: "MHHC - Eminence", lat: 37.141002, lng: -91.359395, type: "Region G FQHC" },
+                { name: "MHHC - Naylor", lat: 36.575336, lng: -90.604004, type: "Region E FQHC" },
+                { name: "MHHC - Poplar Bluff", lat: 36.787593, lng: -90.425639, type: "Region E FQHC" },
+                { name: "MHHC - Van Buren", lat: 36.99734, lng: -91.01438, type: "Region G FQHC" },
+                { name: "MHHC - Viburnum", lat: 37.714528, lng: -91.133547, type: "Region E FQHC" },
+                { name: "MH OB/GYN - Poplar Bluff", lat: 36.788085, lng: -90.433116, type: "Region E FQHC" },
+                { name: "Northwest Health Chillicothe", lat: 39.773176, lng: -93.552738, type: "Region H FQHC" },
+                { name: "SEMO Health Network - Benton", lat: 37.089897, lng: -89.540772, type: "Region E FQHC" },
+                { name: "SEMO Health Network - Kennett", lat: 36.244828, lng: -90.037349, type: "Region E FQHC" },
+                { name: "SEMO Health Network - New Madrid", lat: 36.586679, lng: -89.525421, type: "Region E FQHC" }
+            ];
+
+            // --- NEW: Strategic Assets (Chempacks, Trailers) from 3rd File ---
+            const strategicAssetsData = [
+                { name: "Chempack - Cox Med Ctr", lat: 37.149365, lng: -93.277907, type: "Region D Chempack" },
+                { name: "Chempack - Hannibal Regional", lat: 39.711156, lng: -91.450708, type: "Region B Chempack" },
+                { name: "Chempack - Mercy Springfield", lat: 37.179987, lng: -93.274092, type: "Region D Chempack" },
+                { name: "Chempack - Ozarks Medical Center", lat: 36.729471, lng: -91.857137, type: "Region D Chempack" },
+                { name: "Chempack - Pemiscot County Hospital", lat: 36.236834, lng: -89.740204, type: "Region E Chempack" },
+                { name: "Chempack - Phelps Health", lat: 37.951458, lng: -91.785412, type: "Region I Chempack" },
+                { name: "Chempack - Saint Francis", lat: 37.302901, lng: -89.571477, type: "Region E Chempack" },
+                { name: "Chempack - SSM St. Mary's", lat: 38.574492, lng: -92.168969, type: "Region F Chempack" },
+                { name: "Comm Trailer - CoxHealth #2", lat: 38.951705, lng: -92.334072, type: "Region D Mobile Assets" },
+                { name: "Comm Trailer - Hannibal Regional", lat: 39.710223, lng: -91.448072, type: "Region B Mobile Assets" },
+                { name: "Comm Trailer - Mosaic Life Care", lat: 40.438878, lng: -95.377942, type: "Region H Mobile Assets" },
+                { name: "Comm Trailer - Saint Francis", lat: 37.304007, lng: -89.571903, type: "Region E Mobile Assets" },
+                { name: "Infectious Disease Cache - CoxHealth", lat: 37.22498, lng: -93.289904, type: "Region D Mobile Assets" },
+                { name: "Infectious Disease Cache - Hannibal", lat: 39.711504, lng: -91.451757, type: "Region B Mobile Assets" },
+                { name: "Infectious Disease Cache - Mercy Joplin", lat: 37.03652, lng: -94.509758, type: "Region D Mobile Assets" },
+                { name: "Infectious Disease Cache - Saint Francis", lat: 37.303405, lng: -89.571447, type: "Region E Mobile Assets" },
+                { name: "MCI/Comm Trailer - Madison MC", lat: 37.559812, lng: -90.302795, type: "Region E Mobile Assets" },
+                { name: "MCI/Comm Trailer - Missouri Delta MC", lat: 36.878589, lng: -89.599738, type: "Region E Mobile Assets" },
+                { name: "MCI/Comm Trailer - Northeast RMC", lat: 40.192738, lng: -92.590172, type: "Region B Mobile Assets" },
+                { name: "MCI/Comm Trailer - Saint Francis HC PB", lat: 36.75375, lng: -90.399726, type: "Region E Mobile Assets" },
+                { name: "MCI/Comm Trailer - Southeast Hospital", lat: 37.309833, lng: -89.537394, type: "Region E Mobile Assets" },
+                { name: "Med/Surge Cache - Mercy Lebanon", lat: 37.681282, lng: -92.634744, type: "Region I Mobile Assets" }
+            ];
+
+            // --- CREATE LAYERS ---
+
+            const hospitalLayer = L.layerGroup();
+            hospitalsData.forEach(h => {
+                L.circleMarker([h.lat, h.lng], {
+                    color: 'white',
+                    fillColor: '#2563EB', // Tailwind blue-600
+                    fillOpacity: 0.8,
+                    radius: 8,
+                    weight: 2
+                }).bindPopup(`
+                    <div class="font-sans">
+                        <strong class="text-blue-900 text-sm block mb-1">${h.name}</strong>
+                        <span class="text-xs text-gray-600 block">${h.type}</span>
+                        <div class="mt-2 text-xs border-t pt-1">
+                            <span class="block"><strong>Trauma:</strong> ${h.trauma}</span>
+                            <span class="block"><strong>Phone:</strong> ${h.phone}</span>
+                        </div>
+                    </div>
+                `).addTo(hospitalLayer);
+            });
+            
+            const pediatricLayer = L.layerGroup();
+            pediatricData.forEach(p => {
+                L.circleMarker([p.lat, p.lng], {
+                    color: 'white',
+                    fillColor: '#9333EA', // Tailwind purple-600
+                    fillOpacity: 0.8,
+                    radius: 8,
+                    weight: 2
+                }).bindPopup(`
+                    <div class="font-sans">
+                        <strong class="text-purple-900 text-sm block mb-1">${p.name}</strong>
+                        <span class="text-xs text-gray-600 block">${p.type}</span>
+                        <div class="mt-2 text-xs border-t pt-1 text-purple-700 font-semibold">
+                            Verified Pediatric Beds
+                        </div>
+                    </div>
+                `).addTo(pediatricLayer);
+            });
+
+            const publicHealthLayer = L.layerGroup();
+            publicHealthData.forEach(ph => {
+                L.circleMarker([ph.lat, ph.lng], {
+                    color: 'white',
+                    fillColor: '#14B8A6', // Tailwind teal-500
+                    fillOpacity: 0.8,
+                    radius: 7,
+                    weight: 2
+                }).bindPopup(`
+                    <div class="font-sans">
+                        <strong class="text-teal-900 text-sm block mb-1">${ph.name}</strong>
+                        <span class="text-xs text-gray-600 block">${ph.type}</span>
+                    </div>
+                `).addTo(publicHealthLayer);
+            });
+
+            const clinicLayer = L.layerGroup();
+            clinicData.forEach(c => {
+                L.circleMarker([c.lat, c.lng], {
+                    color: 'white',
+                    fillColor: '#F97316', // Tailwind orange-500
+                    fillOpacity: 0.8,
+                    radius: 6,
+                    weight: 2
+                }).bindPopup(`
+                    <div class="font-sans">
+                        <strong class="text-orange-900 text-sm block mb-1">${c.name}</strong>
+                        <span class="text-xs text-gray-600 block">${c.type}</span>
+                    </div>
+                `).addTo(clinicLayer);
+            });
+
+            const strategicLayer = L.layerGroup();
+            strategicAssetsData.forEach(s => {
+                // Use a different shape or color for strategic assets
+                L.circleMarker([s.lat, s.lng], {
+                    color: 'black',
+                    fillColor: '#374151', // Tailwind gray-700
+                    fillOpacity: 0.9,
+                    radius: 5,
+                    weight: 1
+                }).bindPopup(`
+                    <div class="font-sans">
+                        <strong class="text-gray-900 text-sm block mb-1">${s.name}</strong>
+                        <span class="text-xs text-gray-600 block">${s.type}</span>
+                        <div class="mt-1 text-xs text-red-600 font-semibold">Restricted / Key Resource</div>
+                    </div>
+                `).addTo(strategicLayer);
+            });
+
+            // Add Default Layers to Map
+            hospitalLayer.addTo(map);
+            pediatricLayer.addTo(map);
+            publicHealthLayer.addTo(map);
+            // Clinics and Strategic Assets are OFF by default to reduce clutter, user can toggle them
+
+            // Add Layer Control
+            const overlays = {
+                "Hospitals (Blue)": hospitalLayer,
+                "Pediatric Beds (Purple)": pediatricLayer,
+                "Public Health (Teal)": publicHealthLayer,
+                "Clinics/FQHC (Orange)": clinicLayer,
+                "Strategic Assets (Gray)": strategicLayer
+            };
+            L.control.layers(null, overlays).addTo(map);
+
         });
     </script>
 </body>
