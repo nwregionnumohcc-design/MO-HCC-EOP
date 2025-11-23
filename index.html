@@ -65,9 +65,9 @@
         <section id="data-input" class="bg-white p-6 rounded-xl shadow-lg mb-10">
             <h2 class="text-2xl font-semibold text-blue-700 mb-4 border-b pb-2">1. Load Resource Data</h2>
             <p class="text-gray-600 mb-4">
-                Upload your latest **Missouri Resource Detail Report** CSV file here. The application will automatically parse and display the resources on the map below.
+                Upload **all** your relevant CSV files (e.g., Hospital Report, EMS Report) here. The application will combine and map the resources from every file loaded.
             </p>
-            <input type="file" id="csvFile" accept=".csv" class="w-full text-sm text-gray-700
+            <input type="file" id="csvFile" accept=".csv" multiple class="w-full text-sm text-gray-700
                 file:mr-4 file:py-2 file:px-4
                 file:rounded-lg file:border-0
                 file:text-sm file:font-semibold
@@ -117,9 +117,10 @@
         let map;
         let resources = [];
         let featureGroups = {}; // Stores Leaflet feature groups for each resource type
+        const statusDiv = document.getElementById('data-status');
 
         // --- Configuration for Resource Types ---
-        // This is where you define the different categories and how to filter the raw data
+        // This defines the different categories and how to filter the raw data
         const RESOURCE_CATEGORIES = [
             {
                 key: 'hospitals',
@@ -138,8 +139,9 @@
             {
                 key: 'ems',
                 label: 'Emergency Services (EMS)',
-                color: '#3B82F6', // Blue (New Category)
+                color: '#3B82F6', // Blue
                 icon: 'ambulance',
+                // Matches "EMS Region B Ground Services", "Ambulance Service", etc.
                 filter: (type) => type.includes('EMS') || type.includes('Ambulance Service') || type.includes('Emergency Management Agency')
             },
             {
@@ -253,9 +255,8 @@
         // Function to parse the uploaded CSV file
         function parseCSV(text) {
             // Simple split by newline, then split by comma for basic parsing
-            // This is a minimal parser, assuming well-formed CSV data
             const lines = text.split('\n').filter(line => line.trim() !== '');
-            if (lines.length === 0) return [];
+            if (lines.length <= 1) return [];
 
             // Get the header (first line)
             const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
@@ -282,13 +283,18 @@
             return data;
         }
 
-        // Function to process data and add markers to the map
+        /**
+         * Function to process data from all files and add markers to the map.
+         * @param {Array<Object>} data - Array of all merged resource objects.
+         */
         function processData(data) {
             resources = data.filter(r => r.Latitude && r.Longitude && r.Type);
             document.getElementById('total-resources').textContent = resources.length;
 
             // Clear all existing feature groups
             Object.values(featureGroups).forEach(group => group.clearLayers());
+
+            let bounds = []; // To fit the map view to the loaded data
 
             resources.forEach(resource => {
                 const lat = parseFloat(resource.Latitude);
@@ -297,19 +303,23 @@
                 const resourceName = resource['Resource Name'] || 'Unnamed Resource';
                 const address = `${resource['Street Address']}, ${resource.City}, ${resource.State} ${resource.ZIP}`;
                 const county = resource.County || 'N/A';
-                const phone = resource['Phone 1'] || 'N/A';
-                const trauma = resource['Trauma Level Designation'] || 'N/A';
-
-                if (isNaN(lat) || isNaN(lng)) {
+                // Use a combination of common phone column names
+                const phone = resource['Phone 1'] || resource['Phone'] || 'N/A';
+                // Use a combination of common designation column names
+                const trauma = resource['Trauma Level Designation'] || resource['Level Designation'] || 'N/A';
+                
+                if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
                     // Skip resources without valid coordinates
                     return;
                 }
+                
+                bounds.push([lat, lng]);
 
                 // Determine the category for the resource
                 const category = RESOURCE_CATEGORIES.find(c => c.filter(resourceType));
+                // Fallback to 'Other Strategic Assets' if no explicit filter matches, should not happen with current logic
                 if (!category) {
-                    // Fallback to 'Other Strategic Assets' if no explicit filter matches
-                    return;
+                     return;
                 }
 
                 const markerColor = category.color;
@@ -333,7 +343,7 @@
                         <p><strong>Address:</strong> ${address}</p>
                         <p><strong>County:</strong> ${county}</p>
                         ${phone !== 'N/A' ? `<p><strong>Phone:</strong> <a href="tel:${phone}" class="text-blue-500 hover:underline">${phone}</a></p>` : ''}
-                        ${trauma !== 'N/A' ? `<p><strong>Trauma Level:</strong> <span class="font-semibold text-red-600">${trauma}</span></p>` : ''}
+                        ${trauma !== 'N/A' && trauma !== '--' ? `<p><strong>Designation:</strong> <span class="font-semibold text-red-600">${trauma}</span></p>` : ''}
                     </div>
                 `;
 
@@ -343,7 +353,63 @@
 
                 featureGroups[category.key].addLayer(marker);
             });
+
+            // Adjust map view to fit all loaded markers
+            if (bounds.length > 0) {
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
         }
+        
+        /**
+         * Handles loading and parsing of multiple files selected by the user.
+         * @param {FileList} files - The list of files to process.
+         */
+        function loadAndProcessFiles(files) {
+            let allCombinedResources = [];
+            let filesProcessed = 0;
+            const totalFiles = files.length;
+            statusDiv.textContent = `Loading ${totalFiles} file(s)...`;
+            
+            // Loop through each file and read its contents asynchronously
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const csvText = e.target.result;
+                        const parsedData = parseCSV(csvText);
+
+                        if (parsedData.length > 0) {
+                            allCombinedResources.push(...parsedData);
+                        }
+                    } catch (error) {
+                        console.error(`Error processing file ${file.name}:`, error);
+                    } finally {
+                        filesProcessed++;
+                        // Check if all files are processed
+                        if (filesProcessed === totalFiles) {
+                            resources = allCombinedResources;
+                            if (resources.length > 0) {
+                                processData(resources);
+                                statusDiv.innerHTML = `<span class="text-green-600">Successfully loaded ${resources.length} total records from ${totalFiles} file(s).</span> Check the map layers to visualize data.`;
+                            } else {
+                                statusDiv.textContent = 'Error: No valid data found in the uploaded files.';
+                            }
+                        }
+                    }
+                };
+
+                reader.onerror = function() {
+                    filesProcessed++;
+                    console.error(`Error reading file ${file.name}`);
+                    if (filesProcessed === totalFiles) {
+                        statusDiv.textContent = `Completed processing, but encountered errors reading files. Total records loaded: ${allCombinedResources.length}.`;
+                    }
+                };
+
+                reader.readAsText(file);
+            });
+        }
+
 
         // --- Event Listener and Initialization ---
 
@@ -358,41 +424,17 @@
             initMap();
 
             const fileInput = document.getElementById('csvFile');
-            const statusDiv = document.getElementById('data-status');
 
             fileInput.addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (!file) return;
+                const files = event.target.files;
+                if (files.length === 0) {
+                    statusDiv.textContent = 'Awaiting file upload...';
+                    return;
+                }
 
-                statusDiv.textContent = `Processing file: ${file.name}...`;
-
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const csvText = e.target.result;
-                        const parsedData = parseCSV(csvText);
-
-                        if (parsedData.length === 0) {
-                            statusDiv.textContent = 'Error: No data found or file is empty.';
-                            return;
-                        }
-
-                        processData(parsedData);
-
-                        statusDiv.innerHTML = `<span class="text-green-600">Successfully loaded ${parsedData.length} total records.</span> Check the map layers to visualize data.`;
-                    } catch (error) {
-                        console.error("Error processing file:", error);
-                        statusDiv.textContent = `Error processing file: ${error.message}`;
-                    }
-                };
-
-                reader.onerror = function() {
-                    statusDiv.textContent = 'Error reading file.';
-                };
-
-                reader.readAsText(file);
+                loadAndProcessFiles(files);
             });
         });
     </script>
 </body>
-</html>               
+</html>
