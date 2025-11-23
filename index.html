@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MO HCC Consolidated EOP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Calm Harmony (Warm Neutral bg-gray-50, Deep Blue text-blue-900, Subtle Blue bg-blue-100 accent) -->
+    <!-- Application Structure Plan: Designed a clean, single-page vertical layout with a sticky top navigation (Intro, Purpose, Scope, Activation) for easy, non-linear access. The primary interaction is a "Functional Annex Explorer" in the 'Scope' section. This 2-column (desktop) / 1-column (mobile) element uses JS to update a display area when a user clicks an annex button. This was chosen to transform the static list from the report into an interactive "drill-down" experience, which is more engaging and useful for coalition members who need to find their specific area of concern quickly. -->
+    <!-- Visualization & Content Choices: Report: Section 2 (Purpose) -> Goal: Inform -> Presentation: 2x2 Card Grid (HTML/Tailwind) -> Interaction: None (Visual) -> Justification: Breaks up text, more engaging than a bullet list. Report: Section 3.1 (Annexes) -> Goal: Organize/Explore -> Presentation: Interactive Button List + Display Area -> Interaction: Click (JS updates text) -> Justification: Core interactive element, allows user-driven exploration of plan components. Report: Section 4 (Activation) -> Goal: Inform (Critical) -> Presentation: Styled Numbered List (HTML/Tailwind) -> Justification: Highlights critical triggers. No quantitative data in the report, so no charts (Chart.js/Plotly.js) were used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-700 leading-relaxed">
+
+    <header class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <nav class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-blue-900">MO HCC Consolidated EOP</h1>
+                </div>
+                <div class="hidden sm:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#intro" class="text-gray-600 hover:text-blue-800 px-3 py-2 rounded-md text-sm font-medium">Introduction</a>
+                        <a href="#purpose" class="text-gray-600 hover:text-blue-800 px-3 py-2 rounded-md text-sm font-medium">Purpose</a>
+                        <a href="#scope" class="text-gray-600 hover:text-blue-800 px-3 py-2 rounded-md text-sm font-medium">Scope</a>
+                        <a href="#activation" class="text-gray-600 hover:text-blue-800 px-3 py-2 rounded-md text-sm font-medium">Activation</a>
+                    </div>
+                </div>
+                <div class="sm:hidden">
+                    <button id="mobile-menu-button" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-blue-800 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500" aria-controls="mobile-menu" aria-expanded="false">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                        <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div class="hidden sm:hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="#intro" class="text-gray-600 hover:text-blue-800 block px-3 py-2 rounded-md text-base font-medium">Introduction</a>
+                <a href="#purpose" class="text-gray-600 hover:text-blue-800 block px-3 py-2 rounded-md text-base font-medium">Purpose</a>
+                <a href="#scope" class="text-gray-600 hover:text-blue-800 block px-3 py-2 rounded-md text-base font-medium">Scope</a>
+                <a href="#activation" class="text-gray-600 hover:text-blue-800 block px-3 py-2 rounded-md text-base font-medium">Activation</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        
+        <section id="intro" class="mb-16 scroll-mt-20">
+            <div class="bg-white p-8 rounded-lg shadow-lg">
+                <h2 class="text-3xl font-bold text-blue-900 mb-6">1. Introduction</h2>
+                <p class="mb-4 text-lg">
+                    This document serves as the unified Emergency Operations Plan (EOP) for the Missouri Health Care Coalition (MO HCC). Historically maintained as separate operational documents, these plans have been consolidated into this single, comprehensive framework to ensure a seamless, coordinated response to health and medical emergencies.
+                </p>
+                <p class="text-lg">
+                    This consolidation represents a shift from a fragmented planning approach to a <strong class="text-blue-800">capabilities-based framework</strong>. By integrating the Base Plan with specific Functional Annexes, this document provides a singular reference point for coalition governance, operational coordination, and resource management across the response continuum—from pre-event preparedness to post-event recovery.
+                </p>
+            </div>
+        </section>
+        
+        <section id="purpose" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-blue-900 mb-6">2. Purpose</h2>
+            <p class="text-lg mb-8 max-w-4xl">
+                The primary purpose of this Consolidated EOP is to define the framework within which the MO HCC members coordinate health and medical services during emergencies. This plan does not replace the individual Emergency Operations Plans of member facilities; rather, it bridges the gap between individual facility responses and the broader jurisdictional or state response. Specifically, this plan is designed to:
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-600">
+                    <h3 class="text-xl font-semibold text-blue-900 mb-2">Unify Operational Concepts</h3>
+                    <p>Establish a common operating picture and standardized terminology for all coalition members, regardless of facility type.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-600">
+                    <h3 class="text-xl font-semibold text-blue-900 mb-2">Coordinate Resource Sharing</h3>
+                    <p>Formalize the mechanisms (outlined in the Logistics and Supply Chain Annexes) for resource requests, allocation, and sharing among members during surge events.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-600">
+                    <h3 class="text-xl font-semibold text-blue-900 mb-2">Ensure Continuity of Care</h3>
+                    <p>Facilitate the uninterrupted delivery of medical care through coordinated patient movement, evacuation, and load-balancing strategies.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-600">
+                    <h3 class="text-xl font-semibold text-blue-900 mb-2">Streamline Communication</h3>
+                    <p>Provide a central communication architecture (detailed in the Communications Annex) to ensure redundant and reliable information exchange between the coalition, local Emergency Management, and state health partners.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="scope" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-blue-900 mb-6">3. Scope</h2>
+            <p class="text-lg mb-8 max-w-4xl">
+                The scope of this plan extends to all active members of the MO HCC, including but not limited to hospitals, EMS agencies, long-term care facilities, public health departments, dialysis centers, and emergency management partners within the defined geographic boundaries of the coalition region.
+            </p>
+
+            <div class="bg-white p-8 rounded-lg shadow-lg mb-12">
+                <h3 class="text-2xl font-semibold text-blue-900 mb-4">3.1 Applicability to Annexes</h3>
+                <p class="text-lg mb-6">
+                    Crucially, the scope of this Base Plan encompasses the activation and implementation of all Functional Annexes contained herein. This document serves as the overarching authority that activates the following specialized components.
+                </p>
+                <p class="text-lg mb-6 font-medium text-blue-800">
+                    Click each annex below to learn about its specific role in the consolidated response framework:
+                </p>
+                
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="flex flex-col md:w-1/3 space-y-2">
+                        <button data-annex="command" class="annex-button text-left w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-900 font-medium rounded-lg shadow-sm transition-all duration-150">
+                            Command & Control
+                        </button>
+                        <button data-annex="communications" class="annex-button text-left w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-900 font-medium rounded-lg shadow-sm transition-all duration-150">
+                            Communications
+                        </button>
+                        <button data-annex="surge" class="annex-button text-left w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-900 font-medium rounded-lg shadow-sm transition-all duration-150">
+                            Medical Surge
+                        </button>
+                        <button data-annex="special" class="annex-button text-left w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-900 font-medium rounded-lg shadow-sm transition-all duration-150">
+                            Pediatric & Special Populations
+                        </button>
+                        <button data-annex="trauma" class="annex-button text-left w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-900 font-medium rounded-lg shadow-sm transition-all duration-150">
+                            Burn & Trauma
+                        </button>
+                        <button data-annex="infectious" class="annex-button text-left w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-900 font-medium rounded-lg shadow-sm transition-all duration-150">
+                            Infectious Disease
+                        </button>
+                        <button data-annex="transport" class="annex-button text-left w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-900 font-medium rounded-lg shadow-sm transition-all duration-150">
+                            Evacuation & Transportation
+                        </button>
+                    </div>
+                    
+                    <div id="annex-display-container" class="md:w-2/3">
+                        <div id="annex-display" class="bg-gray-100 p-6 rounded-lg min-h-[150px] flex items-center justify-center transition-all duration-300">
+                            <p class_="text-gray-500 italic">Select an annex from the list to see its description.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-lg shadow-lg">
+                <h3 class="text-2xl font-semibold text-blue-900 mb-4">3.2 All-Hazards Approach</h3>
+                <p class="text-lg">
+                    This plan adopts an "All-Hazards" scope. While specific annexes may address unique scenarios (e.g., a chemical spill or pandemic), the coordination structures defined in this Base Plan are universally applicable to any incident—natural, man-made, or technological—that threatens the health and medical infrastructure of the region.
+                </p>
+            </div>
+        </section>
+
+        <section id="activation" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-blue-900 mb-6">4. Plan Activation</h2>
+            <p class="text-lg mb-8 max-w-4xl">
+                This Consolidated EOP and its relevant Annexes are activated when an incident occurs that meets one or more of the following criteria. Upon activation, this document supersedes previous versions of the standalone MO HCC plans.
+            </p>
+            <div class="space-y-4">
+                <div class="bg-white p-6 rounded-lg shadow-md flex items-start space-x-4">
+                    <span class="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full bg-blue-600 text-white font-bold text-lg">1</span>
+                    <p class="text-lg">Exceeds the capabilities of a single member facility.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md flex items-start space-x-4">
+                    <span class="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full bg-blue-600 text-white font-bold text-lg">2</span>
+                    <p class="text-lg">Requires multi-agency coordination of health and medical resources.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md flex items-start space-x-4">
+                    <span class="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full bg-blue-600 text-white font-bold text-lg">3</span>
+                    <p class="text-lg">Is declared a public health emergency by local or state authorities.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-blue-900 mt-20">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <p class="text-center text-blue-200 text-sm">
+                Missouri Health Care Coalition (MO HCC) &copy; 2025. This application is for informational purposes.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const annexData = {
+                command: "Governs the activation of the Coalition Emergency Operations Center (CEOC).",
+                communications: "Defines the primary and redundant modalities for information sharing.",
+                surge: "Triggers specific capacity-expansion protocols when healthcare demand exceeds standard operating capabilities.",
+                special: "Ensures specific operational considerations for vulnerable populations are integrated into the general response.",
+                trauma: "Coordinate specialized triage and transport mechanisms for mass casualty incidents.",
+                infectious: "Activates high-consequence pathogen protocols and PPE coordination.",
+                transport: "Manages the complex logistics of facility evacuation and patient redistribution."
+            };
+
+            const annexDisplay = document.getElementById('annex-display');
+            const annexButtons = document.querySelectorAll('.annex-button');
+            const defaultText = '<p class="text-gray-500 italic">Select an annex from the list to see its description.</p>';
+            let activeButton = null;
+
+            annexDisplay.innerHTML = defaultText;
+
+            annexButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const annexKey = button.getAttribute('data-annex');
+                    
+                    if (activeButton) {
+                        activeButton.classList.remove('bg-blue-200', 'ring-2', 'ring-blue-500');
+                        activeButton.classList.add('bg-blue-50', 'hover:bg-blue-100');
+                    }
+                    
+                    annexDisplay.innerHTML = `<p class="text-lg text-gray-800">${annexData[annexKey]}</p>`;
+                    button.classList.add('bg-blue-200', 'ring-2', 'ring-blue-500');
+                    button.classList.remove('bg-blue-50', 'hover:bg-blue-100');
+                    
+                    activeButton = button;
+                });
+            });
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const navLinks = mobileMenu.querySelectorAll('a');
+
+            mobileMenuButton.addEventListener('click', () => {
+                const expanded = mobileMenuButton.getAttribute('aria-expanded') === 'true' || false;
+                mobileMenuButton.setAttribute('aria-expanded', !expanded);
+                mobileMenu.classList.toggle('hidden');
+                mobileMenuButton.querySelectorAll('svg').forEach(icon => icon.classList.toggle('hidden'));
+            });
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                    mobileMenuButton.setAttribute('aria-expanded', 'false');
+                    mobileMenuButton.querySelectorAll('svg').forEach(icon => icon.classList.toggle('hidden'));
+                });
+            });
+
+            const mainNavLinks = document.querySelectorAll('header nav a');
+            mainNavLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
